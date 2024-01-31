@@ -4,7 +4,7 @@ on:
       branches:
         - master
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy  # r2にデプロイ 
@@ -12,5 +12,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
-        run: |　# r2バケットにデプロイ
-          aws s3 sync . s3://filess3-odaranet/pub/memo --endpoint-url https://6ecd930c8cd4dc63f87c9398762626e8.r2.cloudflarestorage.com --exclude ".git*" --delete
+        run: |
+            aws s3 sync . s3://filess3-odaranet/pub/memo --endpoint-url https://6ecd930c8cd4dc63f87c9398762626e8.r2.cloudflarestorage.com --exclude ".git*" --delete
