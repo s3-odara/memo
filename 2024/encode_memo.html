@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>
+エンコードメモ
+</title>
+<meta name="description" content="">
+<meta name="viewport" content="initial-scale=1">
+</head>
+
+<body>
+<h1>
+エンコードメモ
+</h1>
+
+<p>
+参考文献
+</p>
+<a href="https://nyanshiba.com/blog/obs-studio/#hevc_nvenc">https://nyanshiba.com/blog/obs-studio/#hevc_nvenc</a><br>
+<a href="https://github.com/nyanshiba/best-ffmpeg-arguments">https://github.com/nyanshiba/best-ffmpeg-arguments</a><br>
+<a href="https://ffmpeg.org/ffmpeg-all.html">https://ffmpeg.org/ffmpeg-all.html</a><br>
+<a href="https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Ffmpeg.md">https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Ffmpeg.md</a><br>
+<a href="https://takuya-1st.hatenablog.jp/entry/2020/05/17/224645">https://takuya-1st.hatenablog.jp/entry/2020/05/17/224645</a><br>
+<a href="https://github.com/ImageMagick/jpeg-xl/blob/main/doc/man/cjxl.txt">https://github.com/ImageMagick/jpeg-xl/blob/main/doc/man/cjxl.txt</a><br>
+<a href="https://trac.ffmpeg.org/wiki/Encode/VP9">https://trac.ffmpeg.org/wiki/Encode/VP9</a><br>
+<a href="https://trac.ffmpeg.org/wiki/Encode/AV1">https://trac.ffmpeg.org/wiki/Encode/AV1</a><br>
+<a href="https://trac.ffmpeg.org/wiki/Encode/HighQualityAudio">https://trac.ffmpeg.org/wiki/Encode/HighQualityAudio</a><br>
+<a href="https://developer.mozilla.org/ja/docs/Web/Media/Formats/Video_codecs">https://developer.mozilla.org/ja/docs/Web/Media/Formats/Video_codecs</a><br>
+<a href="https://nico-lab.net/setting_in_out_color_with_ffmpeg/">https://nico-lab.net/setting_in_out_color_with_ffmpeg/</a><br>
+<a href="https://trac.ffmpeg.org/wiki/colorspace">https://trac.ffmpeg.org/wiki/colorspace</a><br>
+<a href="https://www.reddit.com/r/ffmpeg/comments/ty9c5k/color_metadata_dcip3/">https://www.reddit.com/r/ffmpeg/comments/ty9c5k/color_metadata_dcip3/</a><br>
+<a href="https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Parameters.md">https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Parameters.md</a>
+
+<p>
+作業しながら書いたメモなので推奨値ではないです。おそらく上のリンク読んだほうが役に立つ
+</p>
+
+<p>
+ffmpegヘルプ
+</p>
+<code>ffmpeg -h encoder=hoge</code>
+
+<main>
+
+<h2>
+svtav1
+</h2>
+
+<code>
+-c:v libsvtav1 -preset 10 -svtav1-params tune=0 -pix_fmt yuv420p10le -crf 45  -c:a libopus -ar 48000 -b:a 128k
+</code>
+
+<p>
+低画質ならpreset8もあり。crfは25-35が妥当。45はかなり攻撃的
+</p>
+
+<h2>
+aomav1
+</h2>
+
+<code>
+-c:v libaom-av1 -preset 0 -row-mt 1 -tune vmaf_with_preprocessing -crf 40 -pix_fmt yuv420p10le
+</code>
+
+aomenc --help
+<dl>
+<dt>
+--tune=<arg>
+</dt>
+<dd>
+Distortion metric tuned with
+psnr, ssim, vmaf_with_preprocessing, vmaf_without_preprocessing, vmaf, vmaf_neg, butteraugli, vmaf_saliency_map
+</dd>
+</dl>
+
+<h2>
+vp9
+</h2>
+
+<p>
+realtimeのcrf40cpu used 5あたりでsvtav1のpreset10 crf35と同じぐらい
+</p>
+
+<dl>
+
+<dt>
+-deadline
+</dt>
+
+<dd>
+good, best, realtime
+</dd>
+
+<dt>
+-cpu-used
+</dt>
+
+<dd>
+0-5 or 0-8(realtime)
+</dd>
+
+<dt>
+2pass: (ffmpegで使えず)
+</dt>
+
+<dd>
+<pre><code>
+ffmpeg -i input.mp4 -c:v libvpx-vp9 -deadline realtime -cpu-used 6 -row-mt 1 -crf 30 -pass 1 -an -f null /dev/null && \
+ffmpeg -i input.mp4 -c:v libvpx-vp9 -deadline realtime -cpu-used 6 -row-mt 1 -crf 30 -pass 2 -c:a libopus -ar 48000 -b:a 128k output.webm
+</code></pre>
+</dd>
+
+</dl>
+
+<code>-c:v libvpx-vp9 -deadline realtime -cpu-used 5 -row-mt 1 -crf 30 -b:v 0 output.webm</code>
+
+<h2>
+webp
+</h2>
+
+<code>
+-c:v libwebp
+</code>
+
+<dl>
+<dt>
+-lossless
+</dt>
+<dd>1 or 0</dd>
+<dt>-compression_level</dt>
+<dd>0-6</dd>
+<dt>-quality</dt>
+<dd>0-100 def 75</dd>
+
+<dt>
+-preset
+</dt>
+
+<dt>
+none
+</dt>
+
+<dd>
+Do not use a preset.
+</dd>
+
+<dt>
+default
+</dt>
+
+<dd>
+Use the encoder default.
+</dd>
+
+<dt>
+picture
+</dt>
+
+<dd>
+digital picture, like portrait, inner shot
+</dd>
+
+<dt>
+photo
+</dt>
+
+<dd>
+outdoor photograph, with natural lighting
+</dd>
+
+<dt>
+drawing
+</dt>
+
+<dd>
+hand or line drawing, with high-contrast details
+</dd>
+
+<dt>
+icon
+</dt>
+
+<dd>
+small-sized colorful images
+</dd>
+
+<dt>
+text
+</dt>
+
+<dd>
+text-like
+</dd>
+
+</dl>
+
+<h2>
+webp anime
+</h2>
+
+<code>
+ffmpeg -i input.gif -c:v libwebp_anim -loop 0 -lossless 1 -compression_level 6 -preset icon output.webp
+</code>
+
+<h2>
+opus
+</h2>
+
+<code>
+ffmpeg -i hoge.wav -acodec libopus libopus -ab 160k -ar 48000 output.opus
+</code>
+
+<h2>
+avif
+</h2>
+
+<code>
+-c:v libsvtav1 -preset 0 -svtav1-params tune=0:film-grain=12 -still-picture 1 -pix_fmt yuv420p10le -crf 30 "$output_file" &lt; /dev/null
+</code>
+
+<p>
+svtav1は分割に時間がかかってあまり効果がなさそう
+</p>
+
+<code>
+-preset 0 -crf 40 -still-picture 1 -pix_fmt yuv420p10le -color_primaries smpte432 .avif
+</code>
+
+<code>
+-c:v libaom-av1 -still-picture 1 -aom-params tune=ssim:deltaq-mode=3:cpu-used=4 -pix_fmt yuv420p10le -crf 40
+</code>
+
+<code>
+-pix_fmt yuv420p10le -color_primaries smpte432
+</code>
+
+<dl>
+<dt>
+smpte432
+</dt>
+
+<dd>
+-display p3
+</dd>
+
+<dt>
+smpte431
+</dt>
+<dd>
+dci-p3
+</dd>
+</dl>
+
+<p>
+bt2020
+</p>
+
+<P>
+参考: iphoneのdolby-hdr動画のカラー
+</p>
+
+<dl>
+<dt>-color_trc</dt>
+<dd>arib-std-b67 (HLG)</dd>
+<dt>-color_primaries</dt>
+<dd>bt2020</dd>
+<dt>-colorspace</dt>
+<dd>bt2020nc</dd>
+</dl>
+
+<h2>
+heif-convert
+</h2>
+
+<code>
+heif-convert input.HEIF output.png
+</code>
+
+<h2>
+うんコード
+</h2>
+
+<code>
+for %%f in (*.mkv) do (
+ffmpeg -i "%%~f" -c:v libsvtav1 -preset 5 -crf 35 -g 600 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=4 -c:a libopus -ac 2 -ar 48000 -b:a 128k "output\%%~nf.mkv"
+)
+</code>
+
+<h2>
+JPEGXL
+</h2>
+
+<code>
+ffmpeg -i IMG_2144.JPG -effort 7 -distance 2 IMG_21442.jxl
+</code>
+
+<p>
+distance 9でavif libaom preset0のcrf35より少しサイズが小さい
+</p>
+
+<p>
+distance 0はロスレス distance 1は視覚的ロスレス distance 2はwebにちょうどいい
+</p>
+
+<p>
+cjxl -hの結果から
+</p>
+
+<dl>
+<dt>
+-d DISTANCE, --distance=DISTANCE
+</dt>
+<dd>
+Target visual distance in JND units, lower = higher quality.
+0.0 = mathematically lossless. Default for already-lossy input (JPEG/GIF).
+1.0 = visually lossless. Default for other input.
+Recommended range: 0.5 .. 3.0. Allowed range: 0.0 ... 25.0. Mutually exclusive with --quality.
+</dd>
+
+<dt>
+-q QUALITY, --quality=QUALITY
+</dt>
+<dd>
+Quality setting, higher value = higher quality. This is internally mapped to --distance.
+100 = mathematically lossless. 90 = visually lossless.
+Quality values roughly match libjpeg quality.
+Recommended range: 68 .. 96. Allowed range: 0 .. 100. Mutually exclusive with --distance.
+</dd>
+
+<dt>
+-e EFFORT, --effort=EFFORT
+</dt>
+<dd>
+Encoder effort setting. Range: 1 .. 9.
+Default: 7. Higher numbers allow more computation at the expense of time.
+For lossless, generally it will produce smaller files.
+For lossy, higher effort should more accurately reach the target quality.
+</dd>
+</dl>
+
+<pre><code>
+- 1 or ``lightning''
+- 2 or ``thunder''
+- 3 or ``falcon''
+- 4 or ``cheetah''
+- 5 or ``hare''
+- 6 or ``wombat''
+- 7 or ``squirrel'' (default)
+- 8 or ``kitten''
+- 9 or ``tortoise''
+</code></pre>
+
+
+<h2>
+hevc
+</h2>
+
+<h3>
+const
+</h3>
+
+<code>
+-c:v hevc_nvenc -preset:v p7 -profile:v main10 -rc:v constqp -rc-lookahead 1 -spatial-aq 0 -temporal-aq 1 -weighted_pred 0 -init_qpI 24 -init_qpP 24 -init_qpB 28 -qp_cb_offset 10 -qp_cr_offset 11 -b_ref_mode 1 -dpb_size 4 -multipass 1 -g 60 -bf 3 -pix_fmt yuv420p10le -c:a aac -ar 48000 -b:a 128k
+</code>
+
+<blockquote cite="https://github.com/nyanshiba/best-ffmpeg-arguments#hevc_nvenc">
+<div>
+<p>constqpでは、init_qpI=n init_qpP=n init_qpB=n+4 が良い結果を出す傾向にあった。
+</p>
+</div>
+<footer>
+—Shibanyan, <cite><a href="https://github.com/nyanshiba/best-ffmpeg-arguments#hevc_nvenc">best-ffmpeg-arguments</a></cite>
+</footer>
+</blockquote>
+
+<pre>
+20 20 24
+24 24 28
+
+36 36 40
+38 38 42
+</pre>
+
+<h3>
+vbr cq
+</h3>
+
+<code>
+-c:v hevc_nvenc -preset:v p7 -profile:v main10 -rc:v vbr -rc-lookahead 1 -spatial-aq 0 -temporal-aq 1 -weighted_pred 0 -cq 42 -b_ref_mode 1 -dpb_size 4 -multipass 1 -g 60 -bf 3 -pix_fmt yuv420p10le -c:a aac -ar 48000 -b:a 128k
+</code>
+
+</main>
+
+<footer>
+<p>
+This work (C) 2023 by 小原晴太 is Licensed under <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+</footer>
+</body>
+</html>
